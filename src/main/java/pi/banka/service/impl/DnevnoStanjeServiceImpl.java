@@ -41,6 +41,13 @@ public class DnevnoStanjeServiceImpl implements DnevnoStanjeService {
     }
 
     @Override
+    public DnevnoStanje save(DnevnoStanje dnevnoStanje) {
+        log.debug("Request to save DnevnoStanje : {}", dnevnoStanje);
+        DnevnoStanje dnevnoStanjeResp = dnevnoStanjeRepository.save(dnevnoStanje);
+        return dnevnoStanjeResp;
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<DnevnoStanjeDTO> findAll() {
         log.debug("Request to get all DnevnoStanjes");
@@ -58,5 +65,10 @@ public class DnevnoStanjeServiceImpl implements DnevnoStanjeService {
     public void delete(Long id) {
         log.debug("Request to delete DnevnoStanje : {}", id);
         dnevnoStanjeRepository.deleteById(id);
+    }
+
+    @Override
+    public DnevnoStanje findByLastDateAndRacun(Long idRacuna){
+        return dnevnoStanjeRepository.findByLastDateAndRacun(idRacuna);
     }
 }

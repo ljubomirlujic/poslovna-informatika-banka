@@ -15,7 +15,7 @@ public interface AnalitikaIzvodaService {
      * @param analitikaIzvodaDTO the entity to save.
      * @return the persisted entity.
      */
-    AnalitikaIzvodaDTO save(AnalitikaIzvodaDTO analitikaIzvodaDTO);
+    AnalitikaIzvodaDTO saves(AnalitikaIzvodaDTO analitikaIzvodaDTO);
 
     ReqAnalitikaIzvodaDto save(ReqAnalitikaIzvodaDto reqAnalitikaIzvodaDto);
 

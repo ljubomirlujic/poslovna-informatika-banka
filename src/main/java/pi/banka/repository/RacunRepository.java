@@ -9,4 +9,7 @@ import pi.banka.domain.Racun;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface RacunRepository extends JpaRepository<Racun, Long> {}
+public interface RacunRepository extends JpaRepository<Racun, Long> {
+
+    Racun findRacunByBrojRacuna(String brojRacuna);
+}

@@ -1,16 +1,23 @@
 package pi.banka.service.impl;
 
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.hibernate.TransientPropertyValueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pi.banka.domain.AnalitikaIzvoda;
+import pi.banka.domain.DnevnoStanje;
+import pi.banka.domain.Racun;
 import pi.banka.repository.AnalitikaIzvodaRepository;
 import pi.banka.service.AnalitikaIzvodaService;
+import pi.banka.service.DnevnoStanjeService;
+import pi.banka.service.RacunService;
 import pi.banka.service.dto.AnalitikaIzvodaDTO;
 import pi.banka.service.dto.ReqAnalitikaIzvodaDto;
 import pi.banka.service.mapper.AnalitikaIzvodaMapper;
@@ -31,14 +38,22 @@ public class AnalitikaIzvodaServiceImpl implements AnalitikaIzvodaService {
 
     private final ReqAnalitikaIzvodaMapper reqAnalitikaIzvodaMapper;
 
-    public AnalitikaIzvodaServiceImpl(AnalitikaIzvodaRepository analitikaIzvodaRepository, AnalitikaIzvodaMapper analitikaIzvodaMapper, ReqAnalitikaIzvodaMapper reqAnalitikaIzvodaMapper) {
+    private final DnevnoStanjeService dnevnoStanjeService;
+
+    private final  RacunService racunService;
+
+    public AnalitikaIzvodaServiceImpl(AnalitikaIzvodaRepository analitikaIzvodaRepository, AnalitikaIzvodaMapper analitikaIzvodaMapper,
+                                      ReqAnalitikaIzvodaMapper reqAnalitikaIzvodaMapper,DnevnoStanjeService dnevnoStanjeService,
+                                      RacunService racunService) {
         this.analitikaIzvodaRepository = analitikaIzvodaRepository;
         this.analitikaIzvodaMapper = analitikaIzvodaMapper;
         this.reqAnalitikaIzvodaMapper = reqAnalitikaIzvodaMapper;
+        this.dnevnoStanjeService = dnevnoStanjeService;
+        this.racunService = racunService;
     }
 
     @Override
-    public AnalitikaIzvodaDTO save(AnalitikaIzvodaDTO analitikaIzvodaDTO) {
+    public AnalitikaIzvodaDTO saves(AnalitikaIzvodaDTO analitikaIzvodaDTO) {
         log.debug("Request to save AnalitikaIzvoda : {}", analitikaIzvodaDTO);
         AnalitikaIzvoda analitikaIzvoda = analitikaIzvodaMapper.toEntity(analitikaIzvodaDTO);
         analitikaIzvoda = analitikaIzvodaRepository.save(analitikaIzvoda);
@@ -46,11 +61,172 @@ public class AnalitikaIzvodaServiceImpl implements AnalitikaIzvodaService {
     }
 
     @Override
-    public ReqAnalitikaIzvodaDto save(ReqAnalitikaIzvodaDto reqAnalitikaIzvodaDto) {
+    @Transactional
+    public ReqAnalitikaIzvodaDto save(ReqAnalitikaIzvodaDto reqAnalitikaIzvodaDto) throws TransientPropertyValueException{
         log.debug("Request to save AnalitikaIzvoda : {}", reqAnalitikaIzvodaDto);
         AnalitikaIzvoda analitikaIzvoda = reqAnalitikaIzvodaMapper.toEntity(reqAnalitikaIzvodaDto);
-        analitikaIzvoda = analitikaIzvodaRepository.save(analitikaIzvoda);
-        return reqAnalitikaIzvodaMapper.toDto(analitikaIzvoda);
+        analitikaIzvoda.setBrojStavke((int)(Math.random()*100));
+        analitikaIzvoda.setVrstaPlacanja("uplata");
+
+        Racun racunDuznika = racunService.findRacunByBrojRacuna(analitikaIzvoda.getRacunDuznika());
+        Racun racunPrimaoca = racunService.findRacunByBrojRacuna(analitikaIzvoda.getRacunPrimaoca());
+        if(racunPrimaoca !=null){
+            AnalitikaIzvoda analitikaIzvodaPrimaoca = kreirajAnalitikuIzvodaPrimaoca(analitikaIzvoda);
+
+            DnevnoStanje dnevnoStanjeDuznika = dnevnoStanjeService.findByLastDateAndRacun(racunDuznika.getId());
+            DnevnoStanje dnevnoStanjePrimaoca = dnevnoStanjeService.findByLastDateAndRacun(racunPrimaoca.getId());
+
+            DnevnoStanje novoDnevnoStanjeDuznika = dnevnoStanjeDuznika(analitikaIzvoda, dnevnoStanjeDuznika, racunDuznika);
+            DnevnoStanje novoDnevnoStanjePrimaoca = dnevnoStanjePrimaoca(analitikaIzvodaPrimaoca, dnevnoStanjePrimaoca, racunPrimaoca);
+
+
+            analitikaIzvoda.setDnevnoStanje(novoDnevnoStanjeDuznika);
+            analitikaIzvodaRepository.save(analitikaIzvoda);
+            analitikaIzvodaPrimaoca.setDnevnoStanje(novoDnevnoStanjePrimaoca);
+            analitikaIzvodaRepository.save(analitikaIzvodaPrimaoca);
+
+            return reqAnalitikaIzvodaMapper.toDto(analitikaIzvoda);
+        }else if(analitikaIzvoda.getHitno() || analitikaIzvoda.getIznos() > 300000){
+
+            DnevnoStanje dnevnoStanjeDuznika = dnevnoStanjeService.findByLastDateAndRacun(racunDuznika.getId());
+            DnevnoStanje novoDnevnoStanjeDuznika = dnevnoStanjeDuznika(analitikaIzvoda, dnevnoStanjeDuznika, racunDuznika);
+
+            analitikaIzvoda.setDnevnoStanje(novoDnevnoStanjeDuznika);
+            analitikaIzvodaRepository.save(analitikaIzvoda);
+
+            return reqAnalitikaIzvodaMapper.toDto(analitikaIzvoda);
+        }else{
+            DnevnoStanje dnevnoStanjeDuznika = dnevnoStanjeService.findByLastDateAndRacun(racunDuznika.getId());
+            DnevnoStanje novoDnevnoStanjeDuznika = dnevnoStanjeDuznika(analitikaIzvoda, dnevnoStanjeDuznika, racunDuznika);
+
+            Double rezervisano = novoDnevnoStanjeDuznika.getRezervisano() + analitikaIzvoda.getIznos();
+            novoDnevnoStanjeDuznika.setRezervisano(rezervisano);
+            analitikaIzvoda.setDnevnoStanje(novoDnevnoStanjeDuznika);
+            analitikaIzvodaRepository.save(analitikaIzvoda);
+
+            return reqAnalitikaIzvodaMapper.toDto(analitikaIzvoda);
+        }
+    }
+
+
+    public DnevnoStanje dnevnoStanjeDuznika(AnalitikaIzvoda analitikaIzvoda, DnevnoStanje dnevnoStanjeDuznika, Racun racunDuznika){
+
+
+        if(dnevnoStanjeDuznika == null) {
+            int brojIzvoda = (int) (Math.random() * 100);
+            DnevnoStanje novoDnevnoStanje = new DnevnoStanje();
+            novoDnevnoStanje.setNovoStanje(0 - analitikaIzvoda.getIznos());
+            novoDnevnoStanje.setBrojIzvoda(brojIzvoda);
+            novoDnevnoStanje.setDatumIzvoda(LocalDate.now());
+            novoDnevnoStanje.setPrometNaTeret(analitikaIzvoda.getIznos());
+            novoDnevnoStanje.setPrethodnoStanje(0d);
+            novoDnevnoStanje.setPrometUKorist(0d);
+            novoDnevnoStanje.setRezervisano(0d);
+            novoDnevnoStanje.setRacunPrivatnihLica(racunDuznika);
+            novoDnevnoStanje.getAnalitikaIzvodas().add(analitikaIzvoda);
+
+
+            return novoDnevnoStanje;
+        }
+        else if(dnevnoStanjeDuznika.getDatumIzvoda().equals(LocalDate.now())){
+            double nStanjeDuznika = dnevnoStanjeDuznika.getNovoStanje() - analitikaIzvoda.getIznos();
+            double noviPrometNaTeret = dnevnoStanjeDuznika.getPrometNaTeret() + analitikaIzvoda.getIznos();
+            dnevnoStanjeDuznika.getAnalitikaIzvodas().add(analitikaIzvoda);
+            dnevnoStanjeDuznika.setPrethodnoStanje(nStanjeDuznika + analitikaIzvoda.getIznos());
+            dnevnoStanjeDuznika.setNovoStanje(nStanjeDuznika);
+            dnevnoStanjeDuznika.setPrometNaTeret(noviPrometNaTeret);
+
+
+            return dnevnoStanjeDuznika;
+        }else{
+            int brojIzvoda = (int) (Math.random() * 100);
+            double nStanjeDuznika = dnevnoStanjeDuznika.getNovoStanje() - analitikaIzvoda.getIznos();
+            double noviPrometNaTeret = dnevnoStanjeDuznika.getPrometNaTeret() + analitikaIzvoda.getIznos();
+            DnevnoStanje novoDnevnoStanje = new DnevnoStanje();
+            novoDnevnoStanje.setNovoStanje(nStanjeDuznika);
+            novoDnevnoStanje.setBrojIzvoda(brojIzvoda);
+            novoDnevnoStanje.setDatumIzvoda(LocalDate.now());
+            novoDnevnoStanje.setPrometNaTeret(noviPrometNaTeret);
+            novoDnevnoStanje.setPrethodnoStanje(nStanjeDuznika + analitikaIzvoda.getIznos());
+            novoDnevnoStanje.setPrometUKorist(0d);
+            novoDnevnoStanje.setRezervisano(0d);
+            novoDnevnoStanje.setRacunPrivatnihLica(racunDuznika);
+            novoDnevnoStanje.getAnalitikaIzvodas().add(analitikaIzvoda);
+
+
+            return novoDnevnoStanje;
+        }
+    }
+
+    public DnevnoStanje dnevnoStanjePrimaoca(AnalitikaIzvoda analitikaIzvoda, DnevnoStanje dnevnoStanjePrimaoca, Racun racunPrimaoca){
+
+
+
+        if(dnevnoStanjePrimaoca == null) {
+
+            int brojIzvoda = (int) (Math.random() * 100);
+            DnevnoStanje novoDnevnoStanje = new DnevnoStanje();
+            novoDnevnoStanje.setNovoStanje(analitikaIzvoda.getIznos());
+            novoDnevnoStanje.setBrojIzvoda(brojIzvoda);
+            novoDnevnoStanje.setDatumIzvoda(LocalDate.now());
+            novoDnevnoStanje.setPrometNaTeret(0d);
+            novoDnevnoStanje.setPrethodnoStanje(0d);
+            novoDnevnoStanje.setPrometUKorist(analitikaIzvoda.getIznos());
+            novoDnevnoStanje.setRezervisano(0d);
+            novoDnevnoStanje.setRacunPrivatnihLica(racunPrimaoca);
+            novoDnevnoStanje.getAnalitikaIzvodas().add(analitikaIzvoda);
+
+
+            return novoDnevnoStanje;
+        }
+        else if(dnevnoStanjePrimaoca.getDatumIzvoda().equals(LocalDate.now())){
+            double nstanjePrimaoca = dnevnoStanjePrimaoca.getNovoStanje() + analitikaIzvoda.getIznos();
+            double noviPrometUKorist = dnevnoStanjePrimaoca.getPrometUKorist() + analitikaIzvoda.getIznos();
+            dnevnoStanjePrimaoca.getAnalitikaIzvodas().add(analitikaIzvoda);
+            dnevnoStanjePrimaoca.setPrethodnoStanje(nstanjePrimaoca - analitikaIzvoda.getIznos());
+            dnevnoStanjePrimaoca.setNovoStanje(nstanjePrimaoca);
+            dnevnoStanjePrimaoca.setPrometUKorist(noviPrometUKorist);
+
+
+            return dnevnoStanjePrimaoca;
+
+        }else{
+            int brojIzvoda = (int) (Math.random() * 100);
+            double nstanjePrimaoca = dnevnoStanjePrimaoca.getNovoStanje() + analitikaIzvoda.getIznos();
+            double noviPrometUKorist = dnevnoStanjePrimaoca.getPrometUKorist() + analitikaIzvoda.getIznos();
+            DnevnoStanje novoDnevnoStanje = new DnevnoStanje();
+            novoDnevnoStanje.setNovoStanje(nstanjePrimaoca);
+            novoDnevnoStanje.setBrojIzvoda(brojIzvoda);
+            novoDnevnoStanje.setDatumIzvoda(LocalDate.now());
+            novoDnevnoStanje.setPrometNaTeret(0d);
+            novoDnevnoStanje.setPrethodnoStanje(nstanjePrimaoca - analitikaIzvoda.getIznos());
+            novoDnevnoStanje.setPrometUKorist(noviPrometUKorist);
+            novoDnevnoStanje.setRezervisano(0d);
+            novoDnevnoStanje.setRacunPrivatnihLica(racunPrimaoca);
+            novoDnevnoStanje.getAnalitikaIzvodas().add(analitikaIzvoda);
+
+
+            return novoDnevnoStanje;
+        }
+    }
+
+    public AnalitikaIzvoda kreirajAnalitikuIzvodaPrimaoca(AnalitikaIzvoda analitikaIzvoda){
+
+        AnalitikaIzvoda analitikaIzvodaPrimaoca = new AnalitikaIzvoda();
+        analitikaIzvodaPrimaoca.setAdresaPrimaoca(analitikaIzvoda.getAdresaPrimaoca());
+        analitikaIzvodaPrimaoca.setSvrhaPlacanja(analitikaIzvoda.getSvrhaPlacanja());
+        analitikaIzvodaPrimaoca.setBrojStavke(analitikaIzvoda.getBrojStavke());
+        analitikaIzvodaPrimaoca.setAdresaDuznika(analitikaIzvoda.getAdresaDuznika());
+        analitikaIzvodaPrimaoca.setDuznik(analitikaIzvoda.getDuznik());
+        analitikaIzvodaPrimaoca.setPrimalac(analitikaIzvoda.getPrimalac());
+        analitikaIzvodaPrimaoca.setHitno(analitikaIzvoda.getHitno());
+        analitikaIzvodaPrimaoca.setModel(analitikaIzvoda.getModel());
+        analitikaIzvodaPrimaoca.setIznos(analitikaIzvoda.getIznos());
+        analitikaIzvodaPrimaoca.setPozivNaBroj(analitikaIzvoda.getPozivNaBroj());
+        analitikaIzvodaPrimaoca.setRacunDuznika(analitikaIzvoda.getRacunDuznika());
+        analitikaIzvodaPrimaoca.setRacunPrimaoca(analitikaIzvoda.getRacunPrimaoca());
+        analitikaIzvodaPrimaoca.setVrstaPlacanja(analitikaIzvoda.getVrstaPlacanja());
+        return analitikaIzvodaPrimaoca;
     }
 
 
@@ -77,4 +253,6 @@ public class AnalitikaIzvodaServiceImpl implements AnalitikaIzvodaService {
         log.debug("Request to delete AnalitikaIzvoda : {}", id);
         analitikaIzvodaRepository.deleteById(id);
     }
+
+
 }

@@ -62,6 +62,11 @@ public class RacunServiceImpl implements RacunService {
     }
 
     @Override
+    public Racun findRacunByBrojRacuna(String brojRacuna) {
+        return racunPrivatnihLicaRepository.findRacunByBrojRacuna(brojRacuna);
+    }
+
+    @Override
     public void delete(Long id) {
         log.debug("Request to delete RacunPrivatnihLica : {}", id);
         racunPrivatnihLicaRepository.deleteById(id);

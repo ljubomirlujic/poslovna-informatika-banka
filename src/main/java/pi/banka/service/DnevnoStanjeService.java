@@ -2,6 +2,8 @@ package pi.banka.service;
 
 import java.util.List;
 import java.util.Optional;
+
+import pi.banka.domain.DnevnoStanje;
 import pi.banka.service.dto.DnevnoStanjeDTO;
 
 /**
@@ -15,6 +17,8 @@ public interface DnevnoStanjeService {
      * @return the persisted entity.
      */
     DnevnoStanjeDTO save(DnevnoStanjeDTO dnevnoStanjeDTO);
+
+    DnevnoStanje save(DnevnoStanje dnevnoStanjeDTO);
 
     /**
      * Get all the dnevnoStanjes.
@@ -37,4 +41,7 @@ public interface DnevnoStanjeService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+
+    DnevnoStanje findByLastDateAndRacun(Long idRacuna);
 }
