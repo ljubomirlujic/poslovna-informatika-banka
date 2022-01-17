@@ -26,9 +26,21 @@ async function fetchAnalitike(id, datumPocetka, datumKraja) {
     }
 }
 
+async function fetchRacuni() {
+    try {
+        const resposne = await axios.get(`http://localhost:8080/api/racuni`);
+        return resposne.data
+    } catch (error) {
+        console.error(`Error loading clients !: ${error}`);
+    }
+}
+
+
+
 
 export const NalogZaPrenosService = {
     addNalogZaPrenos,
     fetchClients,
-    fetchAnalitike
+    fetchAnalitike,
+    fetchRacuni
 }

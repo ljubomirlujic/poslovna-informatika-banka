@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { Button, Switch } from "@material-ui/core";
+import React, { useEffect, useState } from "react";
+import { Button, Switch, TextField } from "@material-ui/core";
 import { Link } from "react-router-dom";
+import useDebounce from "../components/useDebounce";
+import { Autocomplete } from "@mui/material";
 
 const NALOG_ZA_PRENOS_DEFAULT = {
   id: null,
@@ -20,6 +22,7 @@ const NALOG_ZA_PRENOS_DEFAULT = {
 
 function NalogZaPrenosView(props) {
   const [nalog, setNalog] = useState(NALOG_ZA_PRENOS_DEFAULT);
+  const [inputValue, setInputValue] = React.useState("");
 
   const handleChange = (event, prop) => {
     setNalog({
@@ -35,14 +38,45 @@ function NalogZaPrenosView(props) {
     });
   };
 
+  const handleChangeAutoComplete = (newValue, props) => {
+    setNalog({
+      ...nalog,
+      [props]: newValue.label,
+    });
+    console.log(newValue.label);
+  };
+
   const validation = () => {
     let validation = true;
     if (nalog.racunDuznika.length < 18) {
-      alert("Pogresan broj");
+      alert("Pogresan broj duznika");
+      validation = false;
+    } else if (nalog.racunPrimaoca.length < 18) {
+      alert("Pogresan broj primaoca");
       validation = false;
     }
     return validation;
   };
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // useEffect(() => {
+  //   if (debouncedSearchTerm) {
+  //     console.log(debouncedSearchTerm);
+  //     props.searchRacuni(debouncedSearchTerm);
+  //     setRacuni(props.racuni);
+  //   }
+  // }, [debouncedSearchTerm]);
+
+  let racuniLista = props.racuni;
+  let racuni;
+  if (racuniLista != undefined) {
+    racuni = props.racuni.map((racun) => ({
+      label: racun.brojRacuna,
+    }));
+  }
 
   return (
     <>
@@ -61,20 +95,33 @@ function NalogZaPrenosView(props) {
               return false;
             }
             props.addNalog(nalog);
-            console.log(nalog);
+            alert("Poslato");
           }}
         >
           <div className="platilacContainer">
             <h4 className="tekst">PLATILAC</h4>
             <label className="tekst">Racun platioca</label>
-            <input
-              type="text"
+            {/* <input
+              type="search"
               name="racunKodBankePlatioca"
               id="racunKodBanke"
               className="racunBanke"
-              maxLength="18"
-              minLength="18"
-              onChange={(event) => handleChange(event, "racunDuznika")}
+              onInput={(e) => setSearchTerm(e.target.value)}
+              // onChange={(event) => handleChange(event, "racunDuznika")}
+            /> */}
+
+            <Autocomplete
+              disablePortal
+              id="combo-box-demo"
+              options={racuni}
+              sx={{ width: 650 }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              onChange={(event, newValue) =>
+                handleChangeAutoComplete(newValue, "racunDuznika")
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Racun duznika" />
+              )}
             />
 
             <label className="tekst">Ime i prezime</label>

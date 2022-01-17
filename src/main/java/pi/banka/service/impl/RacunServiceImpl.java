@@ -67,6 +67,13 @@ public class RacunServiceImpl implements RacunService {
     }
 
     @Override
+    public List<RacunDTO>findRacunBySearchTerm(String searchTerm) {
+        return racunPrivatnihLicaRepository.findRacunBySearchTerm(searchTerm).stream()
+                .map(racunPrivatnihLicaMapper::toDto)
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    @Override
     public void delete(Long id) {
         log.debug("Request to delete RacunPrivatnihLica : {}", id);
         racunPrivatnihLicaRepository.deleteById(id);

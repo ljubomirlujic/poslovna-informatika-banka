@@ -35,6 +35,8 @@ public interface RacunService {
 
     Racun findRacunByBrojRacuna(String brojRacuna);
 
+    List<RacunDTO> findRacunBySearchTerm(String searchTerm);
+
     /**
      * Delete the "id" racunPrivatnihLica.
      *
