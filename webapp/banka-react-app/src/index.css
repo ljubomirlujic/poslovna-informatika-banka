@@ -58,7 +58,17 @@ code {
   font-size: 35px;
 }
 
-form {
+.footer h3 {
+  position: absolute;
+  padding: 10px;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  color: antiquewhite;
+  font-size: 15px;
+  right: 10px;
+  top: 10px;
+}
+
+.container form {
   position: absolute;
   width: 80%;
   height: 80%;
@@ -151,4 +161,41 @@ textarea {
 #h4Hitan {
   display: inline;
   margin-right: 100px;
+}
+
+.tabelaContainer {
+  width: 70% !important;
+  display: block !important;
+}
+
+.tabelaContainer:nth-child(2n-1) {
+  margin: 100px auto !important;
+}
+
+.datePicker {
+  width: 30% !important;
+  display: block !important;
+  margin: 100px auto !important;
+  box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.92);
+  padding: 10px;
+}
+
+.datePicker h4 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  color: rgb(136, 135, 135);
+  font-size: 20px;
+  text-align: center;
+}
+
+.css-17vdz66 {
+  justify-content: center;
+}
+
+.MuiAutocomplete-root {
+  margin: 20px auto !important;
+}
+
+.buttonPregledaj {
+  margin: 10px 0;
+  text-align: center;
 }

@@ -2,6 +2,8 @@ package pi.banka.service;
 
 import java.util.List;
 import java.util.Optional;
+
+import pi.banka.domain.Banka;
 import pi.banka.service.dto.BankaDTO;
 
 /**
@@ -30,6 +32,8 @@ public interface BankaService {
      * @return the entity.
      */
     Optional<BankaDTO> findOne(Long id);
+
+    Banka findOneById(Long id);
 
     /**
      * Delete the "id" banka.

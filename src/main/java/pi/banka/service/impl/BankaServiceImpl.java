@@ -55,6 +55,11 @@ public class BankaServiceImpl implements BankaService {
     }
 
     @Override
+    public Banka findOneById(Long id) {
+        return bankaRepository.findById(id).get();
+    }
+
+    @Override
     public void delete(Long id) {
         log.debug("Request to delete Banka : {}", id);
         bankaRepository.deleteById(id);

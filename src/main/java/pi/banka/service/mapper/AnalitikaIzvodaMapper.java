@@ -11,4 +11,6 @@ import pi.banka.service.dto.AnalitikaIzvodaDTO;
 public interface AnalitikaIzvodaMapper extends EntityMapper<AnalitikaIzvodaDTO, AnalitikaIzvoda> {
     @Mapping(target = "dnevnoStanje", source = "dnevnoStanje", qualifiedByName = "id")
     AnalitikaIzvodaDTO toDto(AnalitikaIzvoda s);
+
+
 }

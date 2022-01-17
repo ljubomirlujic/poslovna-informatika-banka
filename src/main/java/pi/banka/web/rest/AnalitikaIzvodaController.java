@@ -1,15 +1,22 @@
 package pi.banka.web.rest;
 
+import java.io.Console;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.transaction.TransactionProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.bind.annotation.*;
 
 import pi.banka.repository.AnalitikaIzvodaRepository;
@@ -42,6 +49,13 @@ public class AnalitikaIzvodaController {
         return analitikaIzvodaService.findAll();
     }
 
+    @GetMapping("/{id}/{datumPocetka}/{datumKraja}")
+    public List<AnalitikaIzvodaDTO> getByKlijentAndDate(@PathVariable("id") Long id, @PathVariable("datumPocetka") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datumPocetka,
+                                                        @PathVariable("datumKraja") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datumKraja) {
+        log.debug("REST request to get all");
+        return analitikaIzvodaService.findByKlijentAndDate(id, datumPocetka, datumKraja);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AnalitikaIzvodaDTO> getAnalitikaIzvoda(@PathVariable Long id) {
         log.debug("REST request to get AnalitikaIzvoda : {}", id);
@@ -61,6 +75,7 @@ public class AnalitikaIzvodaController {
         }
         System.out.println(reqAnalitikaIzvodaDto);
         ReqAnalitikaIzvodaDto result = analitikaIzvodaService.save(reqAnalitikaIzvodaDto);
+
         return ResponseEntity
                 .created(new URI("/api/analitike-izvoda/" + result.getId()))
                 .body(result);

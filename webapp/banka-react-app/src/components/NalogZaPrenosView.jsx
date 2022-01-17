@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, Switch } from "@material-ui/core";
+import { Link } from "react-router-dom";
 
 const NALOG_ZA_PRENOS_DEFAULT = {
   id: null,
@@ -47,6 +48,9 @@ function NalogZaPrenosView(props) {
     <>
       <div className="footer">
         <h2>NARODNA BANKA SRBIJE</h2>
+        <Link to="/izvjestaj">
+          <h3>ANALITIKE IZVJESTAJ</h3>
+        </Link>
       </div>
       <div className="container">
         <h2>NALOG ZA PRENOS</h2>{" "}
@@ -148,7 +152,13 @@ function NalogZaPrenosView(props) {
                 id="iznos"
                 onChange={(event) => handleChange(event, "iznos")}
               />
-              <input type="text" name="valuta" id="valuta" />
+              <input
+                type="text"
+                name="valuta"
+                id="valuta"
+                readOnly
+                value="RSD"
+              />
             </div>
             <label className="tekst">Svrha placanja</label>
             <textarea

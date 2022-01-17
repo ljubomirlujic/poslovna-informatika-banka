@@ -16,4 +16,7 @@ public interface DnevnoStanjeMapper extends EntityMapper<DnevnoStanjeDTO, Dnevno
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
     DnevnoStanjeDTO toDtoId(DnevnoStanje dnevnoStanje);
+
+
+    DnevnoStanjeDTO toEntity(Long id);
 }

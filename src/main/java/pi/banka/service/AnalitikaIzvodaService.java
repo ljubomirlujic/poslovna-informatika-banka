@@ -1,7 +1,10 @@
 package pi.banka.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
+import pi.banka.domain.AnalitikaIzvoda;
 import pi.banka.service.dto.AnalitikaIzvodaDTO;
 import pi.banka.service.dto.ReqAnalitikaIzvodaDto;
 
@@ -18,6 +21,8 @@ public interface AnalitikaIzvodaService {
     AnalitikaIzvodaDTO saves(AnalitikaIzvodaDTO analitikaIzvodaDTO);
 
     ReqAnalitikaIzvodaDto save(ReqAnalitikaIzvodaDto reqAnalitikaIzvodaDto);
+
+    List<AnalitikaIzvodaDTO> findByKlijentAndDate(Long id, LocalDate datumPocetka, LocalDate krajnjiDatum);
 
     /**
      * Get all the analitikaIzvodas.
